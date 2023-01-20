@@ -69,6 +69,39 @@ data "template_file" "pull_allowed_policy" {
 EOF
 }
 
+data "aws_iam_policy_document" "pull_allowed_lambda_policy" {
+  statement {
+    sid    = "AllowCrossAccountLambdaImagePull"
+    effect = "Allow"
+    actions = [
+      "ecr:BatchGetImage",
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:GetRepositoryPolicy"
+    ]
+
+    principals {
+      type        = "AWS"
+      identifiers = join(",", formatlist("\"arn:aws:iam::%s:root\"", var.pull_account_list))
+    }
+
+    # need lambda to assume the role
+    principals {
+      type = "Service"
+      identifiers = [
+        "lambda.amazonaws.com",
+      ]
+    }
+
+    # only if source ars are like below
+    condition {
+      test     = "StringLike"
+      variable = "aws:sourceArn"
+
+      values = join(",", formatlist("\"arn:aws:lambda:*:%s:function:*\"", var.pull_account_list))
+    }
+  }
+}
+
 # This is the stupidest terraform I've ever had to write. Good lord kill me.
 resource "aws_ecr_repository_policy" "policy" {
   for_each   = var.repository_list
@@ -82,7 +115,8 @@ resource "aws_ecr_repository_policy" "policy" {
     "Statement": [
       ${join(",", compact(tolist([
   length(var.pull_account_list) == 0 ? "" : data.template_file.pull_allowed_policy.rendered,
-  length(var.push_account_list) == 0 ? "" : data.template_file.push_allowed_policy.rendered
+  length(var.push_account_list) == 0 ? "" : data.template_file.push_allowed_policy.rendered,
+  var.allow_lambda_pull ? data.aws_iam_policy_document.pull_allowed_lambda_policy.json : ""
 ])))}
     ]
 }
