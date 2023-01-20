@@ -1,5 +1,6 @@
 variable "allow_lambda_pull" {
   type        = bool
+  default     = false
   description = "A flag to determine whether to add an additional policy to allow cross account ECR pull capabilities for lambda."
 }
 
