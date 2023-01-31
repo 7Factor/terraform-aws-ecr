@@ -1,3 +1,9 @@
+variable "allow_lambda_pull" {
+  type        = bool
+  default     = false
+  description = "A flag to determine whether to add an additional policy to allow cross account ECR pull capabilities for lambda."
+}
+
 variable "pull_account_list" {
   type        = list(string)
   description = "The list of accounts to give pull access to each repository."

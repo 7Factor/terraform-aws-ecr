@@ -69,6 +69,23 @@ data "template_file" "pull_allowed_policy" {
 EOF
 }
 
+data "template_file" "pull_allowed_lambda_policy" {
+  template = <<EOF
+{
+    "Sid": "AllowCrossAccountLambdaImagePull",
+    "Effect": "Allow",
+    "Principal": {
+        "AWS": [${join(",", formatlist("\"arn:aws:iam::%s:root\"", var.pull_account_list))}]
+    },
+    "Action": [
+      "ecr:BatchGetImage",
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:GetRepositoryPolicy"
+    ]
+}
+EOF
+}
+
 # This is the stupidest terraform I've ever had to write. Good lord kill me.
 resource "aws_ecr_repository_policy" "policy" {
   for_each   = var.repository_list
@@ -82,7 +99,8 @@ resource "aws_ecr_repository_policy" "policy" {
     "Statement": [
       ${join(",", compact(tolist([
   length(var.pull_account_list) == 0 ? "" : data.template_file.pull_allowed_policy.rendered,
-  length(var.push_account_list) == 0 ? "" : data.template_file.push_allowed_policy.rendered
+  length(var.push_account_list) == 0 ? "" : data.template_file.push_allowed_policy.rendered,
+  var.allow_lambda_pull ? data.template_file.pull_allowed_lambda_policy.rendered : ""
 ])))}
     ]
 }
