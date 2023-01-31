@@ -84,15 +84,7 @@ data "template_file" "pull_allowed_lambda_policy" {
     ],
     "Condition": {
       "StringLike": {
-        ${
-  join(",",
-    compact(
-      tolist([
-        length(var.pull_account_list) == 0 ? "" : formatlist("\"aws:sourceArn\": \"arn:aws:lambda:us-east-1:%s:function:*\"", var.pull_account_list)
-      ])
-    )
-  )
-}
+        ${join(",", formatlist("\"aws:sourceArn\": \"arn:aws:lambda:us-east-1:%s:function:*\"", var.pull_account_list))}
       }
     }
 }
