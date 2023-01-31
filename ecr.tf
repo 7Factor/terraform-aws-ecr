@@ -81,7 +81,20 @@ data "template_file" "pull_allowed_lambda_policy" {
       "ecr:BatchGetImage",
       "ecr:GetDownloadUrlForLayer",
       "ecr:GetRepositoryPolicy"
-    ]
+    ],
+    "Condition": {
+      "StringLike": {
+        ${
+  join(",",
+    compact(
+      tolist([
+        length(var.pull_account_list) == 0 ? "" : formatlist("\"aws:sourceArn\": \"arn:aws:lambda:us-east-1:%s:function:*\"", var.pull_account_list)
+      ])
+    )
+  )
+}
+      }
+    }
 }
 EOF
 }
