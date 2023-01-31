@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">=0.12.24"
+  required_version = ">=1.0.11"
 }
 
 resource "aws_ecr_repository" "repos" {
@@ -69,37 +69,21 @@ data "template_file" "pull_allowed_policy" {
 EOF
 }
 
-data "aws_iam_policy_document" "pull_allowed_lambda_policy" {
-  statement {
-    sid    = "AllowCrossAccountLambdaImagePull"
-    effect = "Allow"
-    actions = [
+data "template_file" "pull_allowed_lambda_policy" {
+  template = <<EOF
+{
+    "Sid": "AllowCrossAccountLambdaImagePull",
+    "Effect": "Allow",
+    "Principal": {
+        "AWS": [${join(",", formatlist("\"arn:aws:iam::%s:root\"", var.pull_account_list))}]
+    },
+    "Action": [
       "ecr:BatchGetImage",
       "ecr:GetDownloadUrlForLayer",
       "ecr:GetRepositoryPolicy"
     ]
-
-    principals {
-      type        = "AWS"
-      identifiers = join(",", formatlist("\"arn:aws:iam::%s:root\"", var.pull_account_list))
-    }
-
-    # need lambda to assume the role
-    principals {
-      type = "Service"
-      identifiers = [
-        "lambda.amazonaws.com",
-      ]
-    }
-
-    # only if source ars are like below
-    condition {
-      test     = "StringLike"
-      variable = "aws:sourceArn"
-
-      values = join(",", formatlist("\"arn:aws:lambda:*:%s:function:*\"", var.pull_account_list))
-    }
-  }
+}
+EOF
 }
 
 # This is the stupidest terraform I've ever had to write. Good lord kill me.
@@ -116,7 +100,7 @@ resource "aws_ecr_repository_policy" "policy" {
       ${join(",", compact(tolist([
   length(var.pull_account_list) == 0 ? "" : data.template_file.pull_allowed_policy.rendered,
   length(var.push_account_list) == 0 ? "" : data.template_file.push_allowed_policy.rendered,
-  var.allow_lambda_pull ? data.aws_iam_policy_document.pull_allowed_lambda_policy.json : ""
+  var.allow_lambda_pull ? data.template_file.pull_allowed_lambda_policy.rendered : ""
 ])))}
     ]
 }
