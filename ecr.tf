@@ -83,7 +83,7 @@ data "template_file" "pull_allowed_lambda_policy" {
       "ecr:GetRepositoryPolicy"
     ],
     "Condition": {
-        ${join(",", formatlist(" \"StringLike\": { \"aws:sourceArn\": \"arn:aws:lambda:us-east-1:%s:function:*\" }", var.pull_account_list))}
+        "StringLike": { "aws:sourceArn": [${join(",", formatlist("\"arn:aws:lambda:us-east-1:%s:function:*\"", var.pull_account_list))}]
     }
 }
 EOF
