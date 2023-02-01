@@ -75,7 +75,8 @@ data "template_file" "pull_allowed_lambda_policy" {
     "Sid": "AllowCrossAccountLambdaImagePull",
     "Effect": "Allow",
     "Principal": {
-        "AWS": [${join(",", formatlist("\"arn:aws:iam::%s:root\"", var.pull_account_list))}]
+        "AWS": [${join(",", formatlist("\"arn:aws:iam::%s:root\"", var.pull_account_list))}],
+        "Service": "lambda.amazonaws.com"
     },
     "Action": [
       "ecr:BatchGetImage",
