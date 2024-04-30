@@ -1,5 +1,7 @@
-terraform {
-  required_version = ">=0.12.24"
+locals {
+  push_allowed_policy = templatefile("${path.module}/templates/push_policy.tftpl", { images_to_keep = var.images_to_keep })
+  pull_allowed_policy = templatefile("${path.module}/templates/pull_policy.tftpl", { push_account_list = "${join(",", formatlist("\"arn:aws:iam::%s:root\"", var.push_account_list))}" })
+  lifecycle_policy    = templatefile("${path.module}/templates/lifecycle_policy.tftpl", { pull_account_list = "${join(",", formatlist("\"arn:aws:iam::%s:root\"", var.pull_account_list))}" })
 }
 
 resource "aws_ecr_repository" "repos" {
@@ -13,60 +15,7 @@ resource "aws_ecr_lifecycle_policy" "lifecycle_policy" {
 
   depends_on = [aws_ecr_repository.repos]
 
-  policy = <<EOF
-{
-    "rules": [
-        {
-            "rulePriority": 1,
-            "description": "Keep last ${var.images_to_keep} images with `any` tag",
-            "selection": {
-                "tagStatus": "any",
-                "countType": "imageCountMoreThan",
-                "countNumber": ${var.images_to_keep}
-            },
-            "action": {
-                "type": "expire"
-            }
-        }
-    ]
-}
-EOF
-}
-
-data "template_file" "push_allowed_policy" {
-  template = <<EOF
-{
-    "Sid": "AllowCrossAccountPush",
-    "Effect": "Allow",
-    "Principal": {
-        "AWS": [${join(",", formatlist("\"arn:aws:iam::%s:root\"", var.push_account_list))}]
-    },
-    "Action": [
-        "ecr:PutImage",
-        "ecr:InitiateLayerUpload",
-        "ecr:UploadLayerPart",
-        "ecr:CompleteLayerUpload"
-    ]
-}
-EOF
-}
-
-data "template_file" "pull_allowed_policy" {
-  template = <<EOF
-{
-    "Sid": "AllowCrossAccountPull",
-    "Effect": "Allow",
-    "Principal": {
-        "AWS": [${join(",", formatlist("\"arn:aws:iam::%s:root\"", var.pull_account_list))}]
-    },
-    "Action": [
-        "ecr:GetDownloadUrlForLayer",
-        "ecr:GetRepositoryPolicy",
-        "ecr:BatchGetImage",
-        "ecr:BatchCheckLayerAvailability"
-    ]
-}
-EOF
+  policy = local.lifecycle_policy
 }
 
 # This is the stupidest terraform I've ever had to write. Good lord kill me.
@@ -81,8 +30,8 @@ resource "aws_ecr_repository_policy" "policy" {
     "Version": "2008-10-17",
     "Statement": [
       ${join(",", compact(tolist([
-  length(var.pull_account_list) == 0 ? "" : data.template_file.pull_allowed_policy.rendered,
-  length(var.push_account_list) == 0 ? "" : data.template_file.push_allowed_policy.rendered
+  length(var.pull_account_list) == 0 ? "" : local.pull_allowed_policy,
+  length(var.push_account_list) == 0 ? "" : local.push_allowed_policy
 ])))}
     ]
 }

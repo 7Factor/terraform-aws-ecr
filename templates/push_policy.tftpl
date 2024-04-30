@@ -1,0 +1,13 @@
+{
+    "Sid": "AllowCrossAccountPush",
+    "Effect": "Allow",
+    "Principal": {
+        "AWS": [${push_account_list}]
+    },
+    "Action": [
+        "ecr:PutImage",
+        "ecr:InitiateLayerUpload",
+        "ecr:UploadLayerPart",
+        "ecr:CompleteLayerUpload"
+    ]
+}

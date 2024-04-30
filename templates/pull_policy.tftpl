@@ -1,0 +1,13 @@
+{
+    "Sid": "AllowCrossAccountPull",
+    "Effect": "Allow",
+    "Principal": {
+        "AWS": [${pull_account_list}]
+    },
+    "Action": [
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:GetRepositoryPolicy",
+        "ecr:BatchGetImage",
+        "ecr:BatchCheckLayerAvailability"
+    ]
+}
