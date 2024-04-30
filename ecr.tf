@@ -1,9 +1,9 @@
 locals {
-  push_account_list = join(",", formatlist("\"arn:aws:iam::%s:root\"", var.push_account_list))
-  pull_account_list = join(",", formatlist("\"arn:aws:iam::%s:root\"", var.pull_account_list))
+  push_account_arn = join(",", formatlist("\"arn:aws:iam::%s:root\"", var.push_account_list))
+  pull_account_arn = join(",", formatlist("\"arn:aws:iam::%s:root\"", var.pull_account_list))
   lifecycle_policy  = templatefile("${path.module}/templates/lifecycle_policy.tftpl", { images_to_keep = var.images_to_keep })
-  push_policy       = templatefile("${path.module}/templates/push_policy.tftpl", { push_account_list = local.push_account_list })
-  pull_policy       = templatefile("${path.module}/templates/pull_policy.tftpl", { pull_account_list = local.pull_account_list })
+  push_policy       = templatefile("${path.module}/templates/push_policy.tftpl", { push_account_list = local.push_account_arn })
+  pull_policy       = templatefile("${path.module}/templates/pull_policy.tftpl", { pull_account_list = local.pull_account_arn })
   repo_policy_statement = (join(",", compact(tolist([
     length(var.pull_account_list) == 0 ? "" : local.pull_policy,
     length(var.push_account_list) == 0 ? "" : local.push_policy
