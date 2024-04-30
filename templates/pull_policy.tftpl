@@ -2,7 +2,7 @@
     "Sid": "AllowCrossAccountPull",
     "Effect": "Allow",
     "Principal": {
-        "AWS": [${pull_account_list}]
+        "AWS": [${join(",", formatlist("\"arn:aws:iam::%s:root\"", ${pull_account_list}))}]
     },
     "Action": [
         "ecr:GetDownloadUrlForLayer",
