@@ -41,7 +41,7 @@ resource "aws_ecr_repository_policy" "policy" {
   policy = jsonencode({
     Version = "2008-10-17",
     Statement = [
-      length(var.pull_account_list) == 0 ? {} : {
+      length(var.pull_account_list) == 0 ? null : {
         Sid    = "AllowCrossAccountPull",
         Effect = "Allow",
         Principal = {
@@ -54,7 +54,7 @@ resource "aws_ecr_repository_policy" "policy" {
           "ecr:BatchCheckLayerAvailability"
         ]
       },
-      length(var.push_account_list) == 0 ? {} : {
+      length(var.push_account_list) == 0 ? null : {
         Sid    = "AllowCrossAccountPush",
         Effect = "Allow",
         Principal = {
