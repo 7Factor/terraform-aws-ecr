@@ -42,7 +42,7 @@ resource "aws_ecr_repository_policy" "policy" {
     Version = "2008-10-17",
     Statement = [
       join(",", compact(tolist([
-        length(var.pull_account_list) == 0 ? "" : {
+        length(var.pull_account_list) == 0 ? {} : {
           Sid    = "AllowCrossAccountPull",
           Effect = "Allow",
           Principal = {
@@ -55,7 +55,7 @@ resource "aws_ecr_repository_policy" "policy" {
             "ecr:BatchCheckLayerAvailability"
           ]
         },
-        length(var.push_account_list) == 0 ? "" : {
+        length(var.push_account_list) == 0 ? {} : {
           Sid    = "AllowCrossAccountPush",
           Effect = "Allow",
           Principal = {
