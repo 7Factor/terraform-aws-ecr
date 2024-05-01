@@ -41,34 +41,32 @@ resource "aws_ecr_repository_policy" "policy" {
   policy = jsonencode({
     Version = "2008-10-17",
     Statement = [
-      join(",", compact(tolist([
-        length(var.pull_account_list) == 0 ? null : {
-          Sid    = "AllowCrossAccountPull",
-          Effect = "Allow",
-          Principal = {
-            AWS = [local.pull_account_arn]
-          },
-          Action = [
-            "ecr:GetDownloadUrlForLayer",
-            "ecr:GetRepositoryPolicy",
-            "ecr:BatchGetImage",
-            "ecr:BatchCheckLayerAvailability"
-          ]
+      length(var.pull_account_list) == 0 ? null : {
+        Sid    = "AllowCrossAccountPull",
+        Effect = "Allow",
+        Principal = {
+          AWS = [local.pull_account_arn]
         },
-        length(var.push_account_list) == 0 ? null : {
-          Sid    = "AllowCrossAccountPush",
-          Effect = "Allow",
-          Principal = {
-            AWS = [local.push_account_arn]
-          },
-          Action = [
-            "ecr:PutImage",
-            "ecr:InitiateLayerUpload",
-            "ecr:UploadLayerPart",
-            "ecr:CompleteLayerUpload"
-          ]
-        }
-      ])))
+        Action = [
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:GetRepositoryPolicy",
+          "ecr:BatchGetImage",
+          "ecr:BatchCheckLayerAvailability"
+        ]
+      },
+      length(var.push_account_list) == 0 ? null : {
+        Sid    = "AllowCrossAccountPush",
+        Effect = "Allow",
+        Principal = {
+          AWS = [local.push_account_arn]
+        },
+        Action = [
+          "ecr:PutImage",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload"
+        ]
+      }
     ]
   })
 }
