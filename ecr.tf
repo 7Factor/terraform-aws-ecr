@@ -32,41 +32,43 @@ resource "aws_ecr_lifecycle_policy" "lifecycle_policy" {
   })
 }
 
+data "aws_iam_policy_document" "test" {
+  statement {
+    sid    = "AllowCrossAccountPush"
+    effect = "Allow"
+    principals {
+      type        = "AWS"
+      identifiers = local.push_account_arn_list
+    }
+    actions = [
+      "ecr:PutImage",
+      "ecr:InitiateLayerUpload",
+      "ecr:UploadLayerPart",
+      "ecr:CompleteLayerUpload"
+    ]
+  }
+
+  statement {
+    sid    = "AllowCrossAccountPull"
+    effect = "Allow"
+    principals {
+      type        = "AWS"
+      identifiers = local.pull_account_arn_list
+    }
+    actions = [
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:GetRepositoryPolicy",
+      "ecr:BatchGetImage",
+      "ecr:BatchCheckLayerAvailability"
+    ]
+  }
+}
+
 resource "aws_ecr_repository_policy" "policy" {
   for_each   = var.repository_list
   repository = each.value
 
   depends_on = [aws_ecr_repository.repos]
 
-  policy = jsonencode({
-    Version = "2008-10-17",
-    Statement = compact([
-      length(var.pull_account_list) == 0 ? null : {
-        Sid    = "AllowCrossAccountPull",
-        Effect = "Allow",
-        Principal = {
-          AWS = local.pull_account_arn_list
-        },
-        Action = [
-          "ecr:GetDownloadUrlForLayer",
-          "ecr:GetRepositoryPolicy",
-          "ecr:BatchGetImage",
-          "ecr:BatchCheckLayerAvailability"
-        ]
-      },
-      length(var.push_account_list) == 0 ? null : {
-        Sid    = "AllowCrossAccountPush",
-        Effect = "Allow",
-        Principal = {
-          AWS = local.push_account_arn_list
-        },
-        Action = [
-          "ecr:PutImage",
-          "ecr:InitiateLayerUpload",
-          "ecr:UploadLayerPart",
-          "ecr:CompleteLayerUpload"
-        ]
-      }
-    ])
-  })
+  policy = data.aws_iam_policy_document.test.json
 }
