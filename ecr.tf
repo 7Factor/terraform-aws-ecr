@@ -40,7 +40,7 @@ resource "aws_ecr_repository_policy" "policy" {
 
   policy = jsonencode({
     Version = "2008-10-17",
-    Statement = [
+    Statement = compact([
       length(var.pull_account_list) == 0 ? null : {
         Sid    = "AllowCrossAccountPull",
         Effect = "Allow",
@@ -67,6 +67,6 @@ resource "aws_ecr_repository_policy" "policy" {
           "ecr:CompleteLayerUpload"
         ]
       }
-    ]
+    ])
   })
 }
