@@ -1,6 +1,6 @@
 locals {
-  push_account_arn = join(",", formatlist("\"arn:aws:iam::%s:root\"", var.push_account_list))
-  pull_account_arn = join(",", formatlist("\"arn:aws:iam::%s:root\"", var.pull_account_list))
+  push_account_arn = join(",", formatlist("arn:aws:iam::%s:root", var.push_account_list))
+  pull_account_arn = join(",", formatlist("arn:aws:iam::%s:root", var.pull_account_list))
 }
 
 resource "aws_ecr_repository" "repos" {
