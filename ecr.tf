@@ -1,6 +1,6 @@
 locals {
-  push_account_arn = join(",", formatlist("arn:aws:iam::%s:root", var.push_account_list))
-  pull_account_arn = join(",", formatlist("arn:aws:iam::%s:root", var.pull_account_list))
+  push_account_arn_list = formatlist("arn:aws:iam::%s:root", var.push_account_list)
+  pull_account_arn_list = formatlist("arn:aws:iam::%s:root", var.pull_account_list)
 }
 
 resource "aws_ecr_repository" "repos" {
@@ -45,7 +45,7 @@ resource "aws_ecr_repository_policy" "policy" {
         Sid    = "AllowCrossAccountPull",
         Effect = "Allow",
         Principal = {
-          AWS = [local.pull_account_arn]
+          AWS = local.pull_account_arn_list
         },
         Action = [
           "ecr:GetDownloadUrlForLayer",
@@ -58,7 +58,7 @@ resource "aws_ecr_repository_policy" "policy" {
         Sid    = "AllowCrossAccountPush",
         Effect = "Allow",
         Principal = {
-          AWS = [local.push_account_arn]
+          AWS = local.push_account_arn_list
         },
         Action = [
           "ecr:PutImage",
