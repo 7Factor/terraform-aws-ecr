@@ -8,46 +8,31 @@ resource "aws_ecr_repository" "repos" {
   name     = each.value
 }
 
+data "aws_ecr_lifecycle_policy_document" "lifecycle_policy" {
+  rule {
+    priority    = 1
+    description = "Keep last ${var.images_to_keep} images with `any` tag"
+    selection {
+      tag_status   = "any"
+      count_type   = "imageCountMoreThan"
+      count_number = var.images_to_keep
+    }
+    action {
+      type = "expire"
+    }
+  }
+}
+
 resource "aws_ecr_lifecycle_policy" "lifecycle_policy" {
   for_each   = var.repository_list
   repository = each.value
 
   depends_on = [aws_ecr_repository.repos]
 
-  policy = jsonencode({
-    rules = [
-      {
-        rulePriority = 1,
-        description  = "Keep last ${var.images_to_keep} images with `any` tag",
-        selection = {
-          tagStatus   = "any",
-          countType   = "imageCountMoreThan",
-          countNumber = var.images_to_keep
-        },
-        action = {
-          type = "expire"
-        }
-      }
-    ]
-  })
+  policy = data.aws_ecr_lifecycle_policy_document.lifecycle_policy.json
 }
 
-data "aws_iam_policy_document" "test" {
-  statement {
-    sid    = "AllowCrossAccountPush"
-    effect = "Allow"
-    principals {
-      type        = "AWS"
-      identifiers = local.push_account_arn_list
-    }
-    actions = [
-      "ecr:PutImage",
-      "ecr:InitiateLayerUpload",
-      "ecr:UploadLayerPart",
-      "ecr:CompleteLayerUpload"
-    ]
-  }
-
+data "aws_iam_policy_document" "policy_document" {
   statement {
     sid    = "AllowCrossAccountPull"
     effect = "Allow"
@@ -62,6 +47,20 @@ data "aws_iam_policy_document" "test" {
       "ecr:BatchCheckLayerAvailability"
     ]
   }
+  statement {
+    sid    = "AllowCrossAccountPush"
+    effect = "Allow"
+    principals {
+      type        = "AWS"
+      identifiers = local.push_account_arn_list
+    }
+    actions = [
+      "ecr:PutImage",
+      "ecr:InitiateLayerUpload",
+      "ecr:UploadLayerPart",
+      "ecr:CompleteLayerUpload"
+    ]
+  }
 }
 
 resource "aws_ecr_repository_policy" "policy" {
@@ -70,5 +69,5 @@ resource "aws_ecr_repository_policy" "policy" {
 
   depends_on = [aws_ecr_repository.repos]
 
-  policy = data.aws_iam_policy_document.test.json
+  policy = data.aws_iam_policy_document.policy_document.json
 }
