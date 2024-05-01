@@ -8,28 +8,28 @@ resource "aws_ecr_repository" "repos" {
   name     = each.value
 }
 
-data "aws_ecr_lifecycle_policy_document" "lifecycle_policy" {
-  rule {
-    priority    = 1
-    description = "Keep last ${var.images_to_keep} images with `any` tag"
-    selection {
-      tag_status   = "any"
-      count_type   = "imageCountMoreThan"
-      count_number = var.images_to_keep
-    }
-    action {
-      type = "expire"
-    }
-  }
-}
-
 resource "aws_ecr_lifecycle_policy" "lifecycle_policy" {
   for_each   = var.repository_list
   repository = each.value
 
   depends_on = [aws_ecr_repository.repos]
 
-  policy = data.aws_ecr_lifecycle_policy_document.lifecycle_policy.json
+  policy = jsonencode({
+    rules = [
+      {
+        rulePriority = 1,
+        description  = "Keep last ${var.images_to_keep} images with `any` tag",
+        selection = {
+          tagStatus   = "any",
+          countType   = "imageCountMoreThan",
+          countNumber = var.images_to_keep
+        },
+        action = {
+          type = "expire"
+        }
+      }
+    ]
+  })
 }
 
 data "aws_iam_policy_document" "policy_document" {
