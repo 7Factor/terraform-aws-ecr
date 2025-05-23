@@ -1,0 +1,19 @@
+﻿name: Release or Label Workflow
+run-name: ${{ github.event_name == 'push' && 'Create Release Version' || 'Require PR Labels' }}
+
+on:
+  pull_request:
+    types: [opened, labeled, unlabeled, synchronize]
+  push:
+    branches:
+      - main
+
+jobs:
+  release_or_label:
+    name: ${{ github.event_name == 'push' && 'release_on_push' || 'require_label' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: 7Factor/pr-semver-release-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          update_major_minor_tags: true
